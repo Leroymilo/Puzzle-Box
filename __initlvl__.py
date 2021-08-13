@@ -1,3 +1,7 @@
+"""
+Functions to load and reset levels from their .txt files
+"""
+
 import numpy as np
 import pygame as pg
 from pygame.locals import *
