@@ -24,7 +24,7 @@ for d in directions :
 class level :
     def __init__(self, directory) :
         self.dir = directory
-        self.nb = int(directory[3])
+        self.nb = int(directory[3:6])
         File = open('levels\\' + directory)
         Text = File.read()
         File.close()

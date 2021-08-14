@@ -15,8 +15,10 @@ levels = []
 newLvl = True
 i = 1
 while newLvl :
+    nb = str(i)
+    nb = '0'*(3-len(nb)) + nb
     try :
-        levels.append(level('lvl'+str(i)+'.txt'))
+        levels.append(level('lvl'+nb+'.txt'))
     except :
         newLvl = False
     i += 1
