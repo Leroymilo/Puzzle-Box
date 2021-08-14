@@ -34,12 +34,30 @@ Steps = [entitiesCopy(entities)]
 
 while Continue :
     
-    for event in pg.event.get():
-        
-        if event.type == QUIT :
-            Continue = False
+    events = pg.event.get()
+    if events != [] :
 
-        elif event.type == KEYDOWN:
+        for event in events :
+            if event.type == QUIT :
+                Continue = False
+
+        event = events[0]
+        if event.type == KEYDOWN:
+
+            ##Undo
+
+            if event.key == K_BACKSPACE :
+                if turnUp :
+                    Steps.pop()
+                if len(Steps) > 0 :
+                    entities = Steps.pop()
+                    if len(Steps) == 0 :
+                        #In case the level is rewinded to the beginning
+                        Steps = [entitiesCopy(entities)]
+                    if len(curlvl.Logic) > 0 :
+                        curlvl = entOnInt(entities, curlvl)
+                    data = [curlvl, entities, wC]
+
             turnUp = False
 
             ##Player movement
@@ -68,13 +86,13 @@ while Continue :
 
             ##Shoot bullet or Swap
 
-            elif event.key == K_RCTRL :
+            elif event.key == K_SPACE :
                 if entities[1] is None :
                     turnUp = True
                     entities[1] = entity((xP, yP), 'b', direction=entities[0].dir)
                 else :
                     x, y = entities[1].C
-                    if curlvl.Grid[y, x] == '.' :
+                    if not curlvl.Grid[y, x] == 'x' :
                         entities[0].C, entities[1].C = entities[1].C, entities[0].C
                         entities[0].dir, entities[1].dir = entities[1].dir, entities[0].dir
 
@@ -92,16 +110,6 @@ while Continue :
 
                 #entities first save for the undo function
                 Steps = [entitiesCopy(entities)]
-
-            ##Undo
-
-            elif event.key == K_BACKSPACE and len(Steps) > 1 :
-                entities = Steps.pop(-2)
-                if len(curlvl.Logic) > 0 :
-                    curlvl = entOnInt(entities, curlvl)
-                data = [curlvl, entities, wC]
-
-
 
 
             #Check if the action isn't undo or reset
