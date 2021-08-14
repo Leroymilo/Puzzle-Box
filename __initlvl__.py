@@ -16,7 +16,7 @@ newLvl = True
 i = 1
 while newLvl :
     try :
-        levels.append(lvl('lvl'+str(i)+'.txt'))
+        levels.append(level('lvl'+str(i)+'.txt'))
     except :
         newLvl = False
     i += 1
@@ -38,4 +38,5 @@ def nLvl(curlvl=None) :
 def rLvl(curlvl) :
     lvl = levels[curlvl.nb-1].copy()
     wC, ents = getCoords(lvl)
+    lvl = entOnInt(ents, lvl)
     return lvl, ents, wC

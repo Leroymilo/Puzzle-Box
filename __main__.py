@@ -80,12 +80,12 @@ while Continue :
 
             ##Wait turn
 
-            elif event.key == K_KP0 :
+            elif event.key == K_RETURN :
                 turnUp = True
 
             ##Reset level
 
-            elif event.key == K_RETURN :
+            elif event.key == K_KP_PLUS :
                 curlvl, entities, wC = rLvl(curlvl)
                 data = [curlvl, entities, wC]
                 draw(data, Window)
@@ -97,19 +97,29 @@ while Continue :
 
             elif event.key == K_BACKSPACE and len(Steps) > 1 :
                 entities = Steps.pop(-2)
+                if len(curlvl.Logic) > 0 :
+                    curlvl = entOnInt(entities, curlvl)
                 data = [curlvl, entities, wC]
+
+
+
 
             #Check if the action isn't undo or reset
             if turnUp :
+
+                #Updating all the logic groups (doors and interruptors) of the level :
+                if len(curlvl.Logic) > 0 :
+                    curlvl = entOnInt(entities, curlvl)
 
                 #moving and bouncing bullet
                 bullet = entities[1]
                 if bullet is not None :
                     nxb, nyb = getNextC(bullet, entities)
 
-                    if curlvl.Grid[nyb, nxb] in ['X'] or isBlocked((nxb, nyb), entities) :
+                    if isBlocked((nxb, nyb), entities) :
                         bullet.dir = changeDir(bullet)
-                        
+                    elif isWall(nxb, nyb, curlvl) :
+                        bullet.dir = changeDir(bullet)
                     else :
                         bullet.C = (nxb, nyb)
                 

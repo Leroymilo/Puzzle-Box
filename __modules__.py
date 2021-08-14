@@ -21,7 +21,7 @@ for d in directions :
 
 #Classes
 
-class lvl :
+class level :
     def __init__(self, directory) :
         self.dir = directory
         self.nb = int(directory[3])
@@ -36,8 +36,8 @@ class lvl :
         for y in range(len(self.Grid)) :
             for x in range(len(self.Grid[0])) :
                 tile = self.Grid[y, x]
-                if len(tile) > 1 and int(tile[1]) > maxId:
-                    maxId = int(tile[1])
+                if len(tile) > 1 and int(tile[1])+1 > maxId:
+                    maxId = int(tile[1])+1
         logic = [[False, None] for k in range(maxId)]
 
         if maxId > 0 :
@@ -45,8 +45,8 @@ class lvl :
             for y in range(len(self.Grid)) :
                 for x in range(len(self.Grid[0])) :
                     tile = self.Grid[y, x]
-                    if len(tile) > 0 :
-                        Id = tile[1]
+                    if len(tile) > 1 :
+                        Id = int(tile[1])
                         if tile[0] == 'I' :
                             logic[Id][1] = (x, y)
                         else :
@@ -58,14 +58,12 @@ class lvl :
             if objectCoords in self.Logic[Id] :
                 return self.Logic[Id][0]
     
-    def setState(self, state, intCoords) :
-        for Id in range(len(self.Logic)) :
-            if intCoords in self.Logic[Id] :
-                self.Logic[Id][0] = state
+    def setState(self, state, Id) :
+        self.Logic[Id][0] = state
         return None
 
     def copy(self) :
-        return lvl(self.dir)
+        return level(self.dir)
         
 class entity :
     def __init__(self, C, Type, direction=None) :
@@ -80,9 +78,12 @@ class entity :
         return entity(self.C, self.type, direction=self.dir)
 
 
-#Functions
+#Functions and procedures
 
 def getCoords(lvl) :
+    """
+    Get the coordinates of the entities and the end square from the lvl file
+    """
     h, w = lvl.Grid.shape
     ents = [None, None]
     for y in range(h) :
@@ -99,6 +100,10 @@ def getCoords(lvl) :
     return wC, ents
 
 def getNextC(entity, ents) :
+    """
+    Returns the coordinates of the square occupied
+    by the moving entity on the next step if not blocked.
+    """
 
     d = entity.dir
     if d is None :
@@ -117,12 +122,31 @@ def getNextC(entity, ents) :
 
 
 def isBlocked(nC, ents) :
+    """
+    Check if the next coordinates of the tested entity
+    are blocked by another entity.
+    """
     for entity in ents :
         if entity.C == nC :
             return True
     return False
 
+def isWall(x, y, lvl) :
+    """
+    Checks if the coordinates are on a wall or a closed door
+    """
+    if lvl.Grid[y, x] == 'X' :
+        return True
+    elif lvl.Grid[y, x][0] == 'D' and not lvl.getState((x, y)) :
+        return True
+    elif lvl.Grid[y, x][0] == 'd' and lvl.getState((x, y)) :
+        return True
+
+
 def changeDir(entity) :
+    """
+    Used for the reflection of a bullet.
+    """
     directions = ['U', 'R', 'D', 'L']
     for i in range(4) :
         if entity.dir == directions[i] :
@@ -132,6 +156,9 @@ def changeDir(entity) :
 #Procedures
 
 def draw(data, Window) :
+    """
+    Draws the level and te entities with pygame.
+    """
     [lvl, ents, (xW, yW)] = data
     Surface = pg.display.get_surface()
     Window.fill((240, 240, 240))
@@ -151,9 +178,9 @@ def draw(data, Window) :
             elif lvl.Grid[i, j][0] == 'I' :
                 pg.draw.rect(Surface, (240, 0, 0), Rect)
             elif lvl.Grid[i, j][0] == 'D' and not lvl.getState((j, i)) :
-                pg.draw.rect(Surface, (50, 0, 0), Rect)
+                pg.draw.rect(Surface, (100, 0, 0), Rect)
             elif lvl.Grid[i, j][0] == 'd' and lvl.getState((j, i)) :
-                pg.draw.rect(Surface, (50, 0, 0), Rect)
+                pg.draw.rect(Surface, (100, 0, 0), Rect)
 
     ##Drawing entities (player, bullet and boxes)
     for entity in ents :
@@ -175,12 +202,17 @@ def draw(data, Window) :
     return None
 
 def push(entity, ents, lvl) :
+    """
+    Check if there's a need to push entities recursively
+    or if there's a wall blocking the pushing.
+    """
 
     px, py = getNextC(entity, ents)
 
-    if (entity.type == 'P' and lvl.Grid[py, px] in ['X', 'x']) or (entity.type in ['b', 'B'] and lvl.Grid[py, px] == 'X') :
+    if isWall(px, py, lvl) :
         blocked = True
-
+    elif lvl.Grid[py, px] == 'x' and entity.type in ['P', 'B'] :
+        blocked = True
     else :
         blocked = False
         for ent in ents[1:] :
@@ -197,6 +229,9 @@ def push(entity, ents, lvl) :
     return None
 
 def entitiesCopy(entities) :
+    """
+    Makes a deep copy of the entities list for the undo button
+    """
     entC = []
     for ent in entities :
         if ent is None :
@@ -204,3 +239,18 @@ def entitiesCopy(entities) :
         else :
             entC.append(ent.copy())
     return entC
+
+def entOnInt(ents, lvl):
+    """
+    Checks if there are player or boxes entity on interrupters.
+    If so, change the state of the interruptor to True,
+    if not, change it to False
+    """
+    for Id in range(len(lvl.Logic)) :
+        intC = lvl.Logic[Id][1]
+        pushed = False
+        for ent in ents :
+            if ent is not None and ent.C == intC and ent.type in ['P', 'B'] :
+                pushed = True
+        lvl.setState(pushed, Id)
+    return lvl
