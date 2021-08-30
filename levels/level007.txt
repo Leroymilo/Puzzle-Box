@@ -1,0 +1,7 @@
+X X X X X X X X
+X W . . . . X X
+X X X D X X . X
+X . B B B I . X
+X P X ! . . . X
+X . X . . . . X
+X X X X X X X X

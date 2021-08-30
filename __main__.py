@@ -1,163 +1,123 @@
-"""
-The main file with the pygame loop, calling other .py files
-"""
-
-import numpy as np
 import pygame as pg
 from pygame.locals import *
 
-from __modules__ import *
-from __initlvl__ import *
+from __level__ import *
 
-
-#General initialisation
 pg.init()
-clock = pg.time.Clock()
 pg.key.set_repeat(500, 100)
+
+lvl = Level(1)
+Steps = [lvl.copy()]
+
+w, h = lvl.getShape()
+Window = pg.display.set_mode((delta*w, delta*h))
+
+lvl.draw(Window, delta)
+
 Continue = True
 
-#Loading the first level
-curlvl, entities, wC = nLvl()
-
-#Constants for the level
-h, w = curlvl.Grid.shape
-Window = pg.display.set_mode((w*ẟ, h*ẟ))
-
-#first draw
-data = [curlvl, entities, wC]
-draw(data, Window)
-
-#entities first save for the undo function
-Steps = [entitiesCopy(entities)]
-
-#Pygame loop
-
 while Continue :
+    for event in pg.event.get() :
+        turnUp = False
     
-    events = pg.event.get()
-    if events != [] :
+        if event.type == QUIT :
+            Continue = False
 
-        for event in events :
-            if event.type == QUIT :
-                Continue = False
+        elif event.type == KEYDOWN:
 
-        event = events[0]
-        if event.type == KEYDOWN:
 
             ##Undo
 
-            if event.key == K_BACKSPACE :
-                if turnUp :
+            if event.key == K_BACKSPACE or event.key == K_RCTRL:
+                if len(Steps) > 1 :
                     Steps.pop()
-                if len(Steps) > 0 :
-                    entities = Steps.pop()
-                    if len(Steps) == 0 :
-                        #In case the level is rewinded to the beginning
-                        Steps = [entitiesCopy(entities)]
-                    if len(curlvl.Logic) > 0 :
-                        curlvl = entOnInt(entities, curlvl)
-                    data = [curlvl, entities, wC]
+                    lvl.setGlobalState(Steps[-1])
+                    lvl.mainLogic()
 
-            turnUp = False
 
             ##Player movement
 
-            xP, yP = entities[0].C
+            xP, yP = lvl.getPCoords()
             
             if event.key == K_UP :
                 turnUp = True
-                entities[0].dir = 'U'
-                push(entities[0], entities, curlvl)
+                lvl.setPDir('U')
+                lvl.push(lvl.getP(), lvl.getPDir())
 
             elif event.key == K_DOWN :
                 turnUp = True
-                entities[0].dir = 'D'
-                push(entities[0], entities, curlvl)
+                lvl.setPDir('D')
+                lvl.push(lvl.getP(), lvl.getPDir())
                 
             elif event.key == K_RIGHT :
                 turnUp = True
-                entities[0].dir = 'R'
-                push(entities[0], entities, curlvl)
+                lvl.setPDir('R')
+                lvl.push(lvl.getP(), lvl.getPDir())
 
             elif event.key == K_LEFT :
                 turnUp = True
-                entities[0].dir = 'L'
-                push(entities[0], entities, curlvl)                
+                lvl.setPDir('L')
+                lvl.push(lvl.getP(), lvl.getPDir())                
+
 
             ##Shoot bullet or Swap
 
             elif event.key == K_SPACE :
-                if entities[1] is None :
-                    turnUp = True
-                    entities[1] = entity((xP, yP), 'b', direction=entities[0].dir)
-                else :
-                    x, y = entities[1].C
-                    if not curlvl.Grid[y, x] == 'x' :
-                        entities[0].C, entities[1].C = entities[1].C, entities[0].C
-                        entities[0].dir, entities[1].dir = entities[1].dir, entities[0].dir
+                lvl.PbSwap()
+                lvl.mainLogic()
+                turnUp = True
+
 
             ##Wait turn
 
             elif event.key == K_RETURN :
                 turnUp = True
 
+
             ##Reset level
 
             elif event.key == K_KP_PLUS :
-                curlvl, entities, wC = rLvl(curlvl)
-                data = [curlvl, entities, wC]
-                draw(data, Window)
-
-                #entities first save for the undo function
-                Steps = [entitiesCopy(entities)]
+                lvl = lvl.reset()
+                lvl.mainLogic()
+                Steps.append(lvl.copy())
 
 
             #Check if the action isn't undo or reset
             if turnUp :
 
-                #Updating all the logic groups (doors and interruptors) of the level :
-                if len(curlvl.Logic) > 0 :
-                    curlvl = entOnInt(entities, curlvl)
+                #Updating all the logic of the level :
+                lvl.mainLogic()
 
-                #moving and bouncing bullet
-                bullet = entities[1]
-                if bullet is not None :
-                    nxb, nyb = getNextC(bullet, entities)
+                #bullet crushing and movement
+                lvl.checkbCrush()
+                lvl.bUpdate()
 
-                    if isBlocked((nxb, nyb), entities) :
-                        bullet.dir = changeDir(bullet)
-                    elif isWall(nxb, nyb, curlvl) :
-                        bullet.dir = changeDir(bullet)
-                    else :
-                        bullet.C = (nxb, nyb)
-                
-                #Saving the current step for the undo button
-                Steps.append(entitiesCopy(entities))
+                #boxes crushed in doors
+                lvl.boxCrushed()
 
-            draw(data, Window)
+                #Player crushed in doors, getting into pause state if True
+                #if lvl.checkDoorCrush(lvl.getP()) :
 
-            ##Test of level completion and change for next level
 
-            if entities[0].C == wC :
+
+                #Updating the undo storage
+                Steps.append(lvl.copy())
+            
+            lvl.draw(Window, delta)
+
+            if lvl.Win() :
                 print('win')
-                #Loading the next level
-                nlvl = nLvl(curlvl)
-                if nlvl is None :
+                lvl = lvl.nextlevel()
+                if lvl is None :
                     Continue = False
                 else :
-                    curlvl, entities, wC = nlvl
+                    #Resize the window and draws
+                    lvl.mainLogic()
+                    w, h = lvl.getShape()
+                    Window = pg.display.set_mode((delta*w, delta*h))
+                    lvl.draw(Window, delta)
+                    #Resets the undo storage :
+                    Steps = [lvl.copy()]
 
-                    #Constants for the new level
-                    h, w = curlvl.Grid.shape
-                    Window = pg.display.set_mode((w*ẟ, h*ẟ))
-                    data = [curlvl, entities, wC]
-
-                    #first draw of the new level
-                    draw(data, Window)
-
-                    #entities first save for the undo function
-                    Steps = [entitiesCopy(entities)]
 
 pg.quit()
-
-
