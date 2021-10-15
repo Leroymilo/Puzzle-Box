@@ -32,6 +32,15 @@ class logic :
     def getAll(self) :
         return self.gps
 
+    def copyStates(self) :
+        return [link[2] for link in self.gps]
+
+
+    def setStates(self, newStates) :
+        for i in range(len(self.gps)) :
+            self.gps[i][2] = newStates[2]
+        return None
+
 
     def getIdsRec(self, Coords:tuple) :
         #Get the Ids of the links that have the object at "Coords" as a receiver,
@@ -113,23 +122,25 @@ class logic :
 
         for ii in range(len(paths)) :
             path, truePath = paths[ii], []
-            nodePath = chain2nodes(path)
+            nodePath = chain2nodes(path[::-1])
             nodePaths.append(nodePath)
 
             for jj in range(len(nodePath)-1) :
                 s, e = nodePath[jj], nodePath[jj+1]
-                if s[0] == e[0] :
-                    direction = 0
-                else :
-                    direction = 1
-                c = countOverlap(nodePaths, s, e, direction)
-                offset = getOffset(c)
-
+                
                 if jj == 0 :
                     truePath.append((s[0]*delta + delta//2, s[1]*delta + delta//2))
-                truePath[-1] = addOffset(truePath[-1], offset, direction)
-                truePath.append((e[0]*delta + delta//2, e[1]*delta + delta//2))
-                truePath[-1] = addOffset(truePath[-1], offset, direction)
+                    truePath.append((e[0]*delta + delta//2, e[1]*delta + delta//2))
+                else :
+                    if s[0] == e[0] :
+                        direction = 0
+                    else :
+                        direction = 1
+                    c = countOverlap(nodePaths, s, e, direction)
+                    offset = getOffset(c)
+                    truePath[-1] = addOffset(truePath[-1], offset, direction)
+                    truePath.append((e[0]*delta + delta//2, e[1]*delta + delta//2))
+                    truePath[-1] = addOffset(truePath[-1], offset, direction)
 
             truePaths.append(truePath)
         return truePaths
@@ -159,16 +170,17 @@ def getOffset(count) :
 
 def overlap(s1, e1, s2, e2, d) :
     if s2[d] == e2[d] == s1[d] :
-        if s1[1-d] <= s2[1-d] <= e1[1-d] or s1[1-d] <= e2[1-d] <= e1[1-d] :
+        a1, b1 = min((s1[1-d], e1[1-d])), max((s1[1-d], e1[1-d]))
+        if a1 <= s2[1-d] <= b1 or a1 <= e2[1-d] <= b1 :
             return True
     return False
 
 
-def countOverlap(paths, s1, e1, d) :
+def countOverlap(prevPaths, s1, e1, d) :
     count = 0
-    for path in paths[:-1] :
-        for kk in range(len(path)-1) :
-            s2, e2 = path[kk], path[kk+1]
+    for p in prevPaths[:-1] :
+        for kk in range(len(p)-1) :
+            s2, e2 = p[kk], p[kk+1]
             if overlap(s1, e1, s2, e2, d) :
                 count += 1
     return count

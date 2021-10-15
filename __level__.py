@@ -38,7 +38,6 @@ class Level :
             File.close()
             self.makeLvl = True
         except :
-            print(self.dir + " not found")
             self.makeLvl = False
 
         if self.makeLvl :
@@ -112,7 +111,8 @@ class Level :
         else :
             bcopy = None
         boxescopy = [self.boxes[ii].copy() for ii in range(len(self.boxes))]
-        return [Pcopy, bcopy, boxescopy]
+        logcopy = self.log.copyStates()
+        return [Pcopy, bcopy, boxescopy, logcopy]
 
 
     def reset(self) :
@@ -127,7 +127,7 @@ class Level :
 
 
     def setAllVars(self, varsCopy) :
-        [Pcopy, bcopy, boxescopy] = varsCopy
+        [Pcopy, bcopy, boxescopy, logcopy] = varsCopy
         if Pcopy is not None :
             self.P = Pcopy.copy()
         else :
@@ -137,6 +137,7 @@ class Level :
         else :
             self.b = None
         self.boxes = [boxescopy[ii].copy() for ii in range(len(boxescopy))]
+        self.log.setStates(logcopy.copy())
         return None
 
 
@@ -408,9 +409,12 @@ class Level :
         for x in range(self.w) :
             for y in range(self.h) :
                 Coords = x, y
-                if self.grid[y, x] == 'I' :
+                if self.grid[y, x] in 'I!' :
                     Ids = self.log.getIdsEmm(Coords)
-                    newState = self.getIntState(Coords)
+                    if self.grid[y, x] == 'I' :
+                        newState = self.getIntState(Coords)
+                    else :
+                        newState = self.getGateState(Coords)
                     CSI += self.updateLogic(Ids, newState)
         gatesInCSI = True
         while gatesInCSI :
@@ -445,7 +449,7 @@ class Level :
         Rect = pg.Rect(self.W[0]*self.delta, self.W[1]*self.delta, self.delta, self.delta)
         pg.draw.rect(Surface, (0, 240, 0), Rect)
 
-        ##Drawing walls, grates, interruptors, doors and logic gates
+        ##Drawing walls and grates
         for i in range(self.h) :
             for j in range(self.w) :
                 Rect = pg.Rect(j*self.delta, i*self.delta, self.delta, self.delta)
@@ -453,21 +457,6 @@ class Level :
                     pg.draw.rect(Surface, (0, 0, 0), Rect)
                 elif self.grid[i, j] == 'x' :
                     pg.draw.rect(Surface, (100, 100, 100), Rect)
-                elif self.grid[i, j][0] == 'I' :
-                    pg.draw.rect(Surface, (240, 0, 0), Rect)
-                elif self.grid[i, j][0] == 'D' :
-                    Id = self.log.getIdsRec((j, i))[0]
-                    activated = self.log.getLinkState(Id)
-                    if activated :
-                        pg.draw.rect(Surface, (255, 170, 170), Rect)
-                    else :
-                        pg.draw.rect(Surface, (180, 0, 0), Rect)
-                elif self.grid[i, j][0] == '&' :
-                    Window.blit(AND, (j*self.delta, i*self.delta))
-                elif self.grid[i, j][0] == '|' :
-                    Window.blit(OR, (j*self.delta, i*self.delta))
-                elif self.grid[i, j][0] == '!' :
-                    Window.blit(NO, (j*self.delta, i*self.delta))
 
         ##Drawing lines representing connections
         groups = self.log.getAll()
@@ -486,6 +475,26 @@ class Level :
             for ii in range(len(path)-1) :
                 start, end = path[ii], path[ii+1]
                 pg.draw.line(Surface, color, start, end)
+
+        ##Drawing logic assets (over cables)
+        for i in range(self.h) :
+            for j in range(self.w) :
+                Rect = pg.Rect(j*self.delta, i*self.delta, self.delta, self.delta)
+                if self.grid[i, j][0] == 'I' :
+                    pg.draw.rect(Surface, (240, 0, 0), Rect)
+                elif self.grid[i, j][0] == 'D' :
+                    Id = self.log.getIdsRec((j, i))[0]
+                    activated = self.log.getLinkState(Id)
+                    if activated :
+                        pg.draw.rect(Surface, (255, 170, 170), Rect)
+                    else :
+                        pg.draw.rect(Surface, (180, 0, 0), Rect)
+                elif self.grid[i, j][0] == '&' :
+                    Window.blit(AND, (j*self.delta, i*self.delta))
+                elif self.grid[i, j][0] == '|' :
+                    Window.blit(OR, (j*self.delta, i*self.delta))
+                elif self.grid[i, j][0] == '!' :
+                    Window.blit(NO, (j*self.delta, i*self.delta))
 
         ##Drawing boxes
         for box in self.boxes :
