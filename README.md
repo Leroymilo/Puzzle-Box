@@ -1,5 +1,6 @@
-# Puzzle-Box
-See the description of the project it's from.
+# Swap!
+
+Download the .zip file, extract it and run Swap.exe
 
 Arrow keys to move
 Enter to wait
