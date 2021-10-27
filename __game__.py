@@ -3,27 +3,26 @@ from pygame.locals import *
 
 from __level__ import *
 
-delta = 32
-
-def play(nb) :
-    completedLevels = []
+def play(nb, Window) :
     lvl = Level(nb)
+    if not lvl.makeLvl :
+        print('error, non exising level')
+        return False
     lvl.mainLogic()
     Steps = [lvl.copyAllVars()]
 
-    w, h = lvl.getShape()
-    Window = pg.display.set_mode((delta*w, delta*h))
+    lvl.drawBG(Window)
+    lvl.draw(Window, False)
 
-    lvl.draw(Window)
-
-    Play = True
-
-    while Play :
+    while True :
+        if not lvl.makeLvl :
+            print('error, non exising level')
+            return False
         for event in pg.event.get() :
             turnUp = False
         
             if event.type == QUIT :
-                Play = False
+                return False
 
             elif event.type == KEYDOWN:
 
@@ -85,7 +84,7 @@ def play(nb) :
                 ##Return to menu
 
                 elif event.key == K_ESCAPE :
-                    return completedLevels
+                    return False
 
 
                 #Check if the action isn't undo or reset
@@ -106,20 +105,14 @@ def play(nb) :
 
                     #Updating the undo storage
                     Steps.append(lvl.copyAllVars())
+
+                    for kk in range(4) :
+                        lvl.drawBG(Window)
+                        lvl.draw(Window, k=kk, prev_step=Steps[-2])
+                        pg.time.wait(25)
                 
-                lvl.draw(Window)
+                lvl.drawBG(Window)
+                lvl.draw(Window, k=4)
 
                 if lvl.Win() :
-                    completedLevels.append(int(lvl.nb))
-                    lvl = lvl.nextlevel()
-                    if lvl is None :
-                        Play = False
-                    else :
-                        #Resize the window and draws
-                        lvl.mainLogic()
-                        w, h = lvl.getShape()
-                        Window = pg.display.set_mode((delta*w, delta*h))
-                        lvl.draw(Window)
-                        #Resets the undo storage :
-                        Steps = [lvl.copyAllVars()]
-    return completedLevels
+                    return True

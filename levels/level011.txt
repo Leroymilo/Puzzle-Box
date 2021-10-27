@@ -1,7 +1,12 @@
-X X X X X X X
-X . X W . . X
-X . . . . . X
-X x x B X X X
-X . . . . . X
-X . . . P . X
-X X X X X X X
+9 9
+X X X X X X X X X
+X . . . W . . . X
+X . . . . . . . X
+X . . . . . . . X
+X X X X D X X X X
+X . . . . . . . X
+X . . . . . I . X
+X . . . P . . . X
+X X X X X X X X X
+Remember to use your bullet,
+and the ENTER key to wait.

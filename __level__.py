@@ -7,29 +7,31 @@ from __logic__ import *
 
 
 #Constants
-
 directions = ["U", "R", "D", "L"]
-#List of levels where the player is not allowed to swap :
-NoSwap =  [1, 2, 3, 4, 5, 6, 7, 8]
+#List of levels where the player is not allowed to shoot and swap :
+NoSwap =  [1, 2, 3, 4, 5, 6, 7]
 
 #Loading sprites :
-plSprites, blSprites = [], []
-for d in directions :
-    blSprites.append(pg.image.load(os.path.join("sprites\\bullet" + d + ".png")))
-    plSprites.append(pg.image.load(os.path.join("sprites\\player" + d + ".png")))
-AND = pg.image.load(os.path.join("sprites\\AND.png"))
-OR = pg.image.load(os.path.join("sprites\\OR.png"))
-NO = pg.image.load(os.path.join("sprites\\NO.png"))
-Box = pg.image.load(os.path.join("sprites\\Box.png"))
-
+Floor = pg.transform.scale(pg.image.load(os.path.join("sprites\\Floor.png")), (delta, delta))
+Wall = pg.transform.scale(pg.image.load(os.path.join("sprites\\Wall.png")), (delta, delta))
+Grate = pg.transform.scale(pg.image.load(os.path.join("sprites\\grate.png")), (delta, delta))
+Win = pg.transform.scale(pg.image.load(os.path.join("sprites\\Win.png")), (delta, delta))
+AND = pg.transform.scale(pg.image.load(os.path.join("sprites\\AND.png")), (delta, delta))
+OR = pg.transform.scale(pg.image.load(os.path.join("sprites\\OR.png")), (delta, delta))
+NO = pg.transform.scale(pg.image.load(os.path.join("sprites\\NO.png")), (delta, delta))
+Box = pg.transform.scale(pg.image.load(os.path.join("sprites\\Box.png")), (delta, delta))
+Target = pg.transform.scale(pg.image.load(os.path.join("sprites\\Target.png")), (delta, delta))
+Interruptor = pg.transform.scale(pg.image.load(os.path.join("sprites\\Interruptor.png")), (delta, delta))
+Door0 = pg.transform.scale(pg.image.load(os.path.join("sprites\\Door0.png")), (delta, delta))
+Door3 = pg.transform.scale(pg.image.load(os.path.join("sprites\\Door3.png")), (delta, delta))
 
 class Level :
     def __init__(self, number) :
         self.nb = str(number)
         longnb = (3-len(self.nb))*"0" + self.nb
         self.dir = "levels\level" + longnb + ".txt"
-        self.delta = 32
-
+        global delta
+        delta = delta
 
         #Checks if there's a file for the level number asked
         try :
@@ -41,15 +43,17 @@ class Level :
             self.makeLvl = False
 
         if self.makeLvl :
-            self.grid = np.array([line.split(' ') for line in Text.split('\n')])
+            lines = Text.split('\n')
+            self.h, self.w = tuple(map(int, lines[0].split()))
+            self.grid = np.array([line.split() for line in lines[1:self.h+1]])
+            self.text = lines[self.h+1:]
 
-            self.h, self.w = self.grid.shape
             self.boxes = []
             self.b = None
             self.log = logic(self.nb, self.grid)
             if self.log.makeLog :
                 paths = self.log.getPaths(self.grid)
-                self.cables = self.log.getTruePaths(paths, self.delta)
+                self.cables = self.log.getTruePaths(paths, delta)
             else :
                 self.cables = []
 
@@ -59,13 +63,25 @@ class Level :
                     if self.grid[y, x] == 'P' :
                         self.P = entity((x, y), 'P')
                         self.P.setDir('U')
-                        self.grid[y, x] == '.'
-                    if self.grid[y, x] == 'B' :
+                        self.grid[y, x] = '.'
+                    elif self.grid[y, x] == 'B' :
                         self.boxes.append(entity((x, y), 'B'))
-                        self.grid[y, x] == '.'
-                    if self.grid[y, x] == 'W' :
+                        self.grid[y, x] = '.'
+                    elif self.grid[y, x] == 'D' :
+                        self.log.addElement(x, y, 'D')
+                    elif self.grid[y, x] == 'I' :
+                        self.log.addElement(x, y, 'I')
+                    elif self.grid[y, x] == 'T' :
+                        self.log.addElement(x, y, 'T')
+                    elif self.grid[y, x] == '&' :
+                        self.log.addElement(x, y, '&')
+                    elif self.grid[y, x] == '|' :
+                        self.log.addElement(x, y, '|')
+                    elif self.grid[y, x] == '!' :
+                        self.log.addElement(x, y, '!')
+                    elif self.grid[y, x] == 'W' :
                         self.W = (x, y)
-                        self.grid[y, x] == '.'
+
 
 
     """
@@ -89,10 +105,6 @@ class Level :
     def setPDir(self, direction) :
         self.P.setDir(direction)
         return None
-
-
-    def getShape(self) :
-        return self.w, self.h
 
 
     """
@@ -119,13 +131,6 @@ class Level :
         return Level(self.nb)
 
 
-    def nextlevel(self) :
-        nlvl = Level(int(self.nb)+1)
-        if nlvl.makeLvl :
-            return nlvl
-        return None
-
-
     def setAllVars(self, varsCopy) :
         [Pcopy, bcopy, boxescopy, logcopy] = varsCopy
         if Pcopy is not None :
@@ -145,6 +150,12 @@ class Level :
     PUZZLE_STUFF##############################################################################################
     Methods to test colisions, win, swap and such.
     """
+
+
+    def isTile(self, x, y, types) :
+        if 0 <= x < self.w and 0 <= y < self.h :
+            return self.grid[y, x] in types
+        return False
 
 
     def getNextC(self, ent:entity, d) :
@@ -170,9 +181,9 @@ class Level :
         """
         Checks if the coordinates are on a wall or a closed door
         """
-        if self.grid[y, x] == 'X' :
+        if self.isTile(x, y, 'X') :
             return True
-        elif self.grid[y, x] == 'D' :
+        elif self.isTile(x, y, 'D') :
             doorState = not self.log.getLinkState(self.log.getIdsRec((x, y))[0])
             return doorState
         return False
@@ -188,7 +199,7 @@ class Level :
 
         px, py = self.getNextC(subject, direction)
 
-        if self.isWall(px, py) or self.grid[py, px] == 'x' :
+        if self.isWall(px, py) or self.isTile(px, py, 'Tx') :
             blocked = True
         else :
             blocked = False
@@ -217,9 +228,10 @@ class Level :
                 turnUp = True
                 self.b = entity(self.P.getCoords(), 'b')
                 self.b.setDir(self.P.getDir())
+                self.resetAllT()
             else :
                 x, y = self.b.getCoords()
-                if self.grid[y, x] != 'x' :
+                if  not self.isTile(x, y, 'x') :
                     self.b.setCoords(self.P.getCoords())
                     self.P.setCoords((x, y))
                     PDir = self.P.getDir()
@@ -248,6 +260,19 @@ class Level :
         return None
 
 
+    def resetAllT(self) :
+        """
+        Resets all the targets when a bullet is shot
+        or if another target is activated.
+        """
+        groups = self.log.getAllCables()
+        for Id in range(len(groups)) :
+            x, y = groups[Id][0]
+            if self.grid[y, x] == 'T' :
+                self.log.setLinkState(Id, False)
+        return None
+
+
     def bUpdate(self) :
         """
         Updates the position of the bullet :
@@ -256,8 +281,13 @@ class Level :
         """
         if self.b is not None :
                     nxb, nyb = self.getNextC(self.b, self.b.getDir())
-
-                    if self.isBoxBlocked(nxb, nyb) or self.isWall(nxb, nyb) :
+                    
+                    if self.isTile(nxb, nyb, 'T') :
+                        self.resetAllT()
+                        for Id in self.log.getIdsEmm((nxb, nyb)) :
+                            self.log.setLinkState(Id, True)
+                        self.b = None
+                    elif self.isBoxBlocked(nxb, nyb) or self.isWall(nxb, nyb) :
                         self.changeDir(self.b)
                     else :
                         self.b.setCoords((nxb, nyb))
@@ -270,10 +300,7 @@ class Level :
         """
         if self.b is not None :
             x, y = self.b.getCoords()
-            for box in self.boxes :
-                if box.getCoords() == (x, y) :
-                    self.b = None
-            if self.isWall(x, y) :
+            if self.isBoxBlocked(x, y) or self.isWall(x, y) :
                 self.b = None
         return None
 
@@ -439,27 +466,54 @@ class Level :
     """
 
 
-    def draw(self, Window) :
+    def drawBG(self, Window) :
         """
-        Draws the whole level using pygame
+        Draws the background of the level,
+        i.e. everything that won't move between steps
         """
         Surface = pg.display.get_surface()
-        Window.fill((240, 240, 240))
-
-        Rect = pg.Rect(self.W[0]*self.delta, self.W[1]*self.delta, self.delta, self.delta)
-        pg.draw.rect(Surface, (0, 240, 0), Rect)
+        Window.fill((0, 0, 100))
+        Ww, Wh = Window.get_size()
+        x0, y0 = (Ww-self.w*delta)//2, (Wh-self.h*delta)//2
 
         ##Drawing walls and grates
         for i in range(self.h) :
             for j in range(self.w) :
-                Rect = pg.Rect(j*self.delta, i*self.delta, self.delta, self.delta)
+                x, y = x0 + j*delta, y0 + i*delta
                 if self.grid[i, j] == 'X' :
-                    pg.draw.rect(Surface, (0, 0, 0), Rect)
+                    Window.blit(Wall, (x, y))
                 elif self.grid[i, j] == 'x' :
-                    pg.draw.rect(Surface, (100, 100, 100), Rect)
+                    Window.blit(Grate, (x, y))
+                elif self.grid[i, j] == '.' :
+                    Window.blit(Floor, (x, y))
+                elif self.grid[i, j] == 'W' :
+                    Window.blit(Floor, (x, y))
+                    Window.blit(Win, (x, y))
+        
+        ##Writing tips
+        font = pg.font.SysFont("comicsansms", 24)
+        y = y0+self.h*delta
+        for line in self.text :
+            tip = font.render(line, True, (255, 255, 255))
+            x = (Ww - tip.get_width())//2
+            Window.blit(tip, (x, y))
+            y += tip.get_height()
+
+    def draw(self, Window, k=0, prev_step=None) :
+        """
+        Draws everything that changes between steps
+        k is the animation index, going from 0 to 3
+        (4 frames of animation max),
+        k = 4 is to draw the new first frame.
+        """
+        Surface = pg.display.get_surface()
+        Ww, Wh = Window.get_size()
+        x0, y0 = (Ww-self.w*delta)//2, (Wh-self.h*delta)//2
+        if prev_step is None :
+            k = 4
 
         ##Drawing lines representing connections
-        groups = self.log.getAll()
+        groups = self.log.getAllCables()
         for id in range(len(groups)) :
             #The color of the line will depend of the state of the link
             link = groups[id]
@@ -473,62 +527,76 @@ class Level :
             ex, ey = link[1]
             
             for ii in range(len(path)-1) :
-                start, end = path[ii], path[ii+1]
+                start = (x0 + path[ii][0], y0 + path[ii][1])
+                end = (x0 + path[ii+1][0], y0 + path[ii+1][1])
                 pg.draw.line(Surface, color, start, end)
 
         ##Drawing logic assets (over cables)
-        for i in range(self.h) :
-            for j in range(self.w) :
-                Rect = pg.Rect(j*self.delta, i*self.delta, self.delta, self.delta)
-                if self.grid[i, j][0] == 'I' :
-                    pg.draw.rect(Surface, (240, 0, 0), Rect)
-                elif self.grid[i, j][0] == 'D' :
-                    Id = self.log.getIdsRec((j, i))[0]
-                    activated = self.log.getLinkState(Id)
-                    if activated :
-                        pg.draw.rect(Surface, (255, 170, 170), Rect)
-                    else :
-                        pg.draw.rect(Surface, (180, 0, 0), Rect)
-                elif self.grid[i, j][0] == '&' :
-                    Window.blit(AND, (j*self.delta, i*self.delta))
-                elif self.grid[i, j][0] == '|' :
-                    Window.blit(OR, (j*self.delta, i*self.delta))
-                elif self.grid[i, j][0] == '!' :
-                    Window.blit(NO, (j*self.delta, i*self.delta))
+        for element in self.log.elements :
+            (xx, yy), type_ = element
+            x, y = x0+xx*delta, y0+yy*delta
+            if type_ == 'I' :
+                Window.blit(Interruptor, (x, y))
+            elif type_ == 'D' :
+                Id = self.log.getIdsRec((xx, yy))[0]
+                activated = self.log.getLinkState(Id)
+                if activated :
+                    Window.blit(Door3, (x, y))
+                else :
+                    Window.blit(Door0, (x, y))
+            elif type_ == '&' :
+                Window.blit(AND, (x, y))
+            elif type_ == '|' :
+                Window.blit(OR, (x, y))
+            elif type_ == '!' :
+                Window.blit(NO, (x, y))
+            elif type_ == 'T' :
+                Window.blit(Target, (x, y))
 
         ##Drawing boxes
-        for box in self.boxes :
-            x, y = box.getCoords()
-            Window.blit(Box, (x*self.delta, y*self.delta))
+        for ibox in range(len(self.boxes)) :
+            x2, y2 = self.boxes[ibox].getCoords()
+            x2, y2 = x0 + delta*x2, y0 + delta*y2
+            if k!=4 and ibox < len(prev_step[2]) :
+                x1 ,y1 = prev_step[2][ibox].getCoords()
+                x1, y1 = x0 + delta*x1, y0 + delta*y1
+                dx, dy = (x2-x1)//4, (y2-y1)//4
+                x, y = x1+dx*k, y1+dy*k
+            else :
+                x, y = x2, y2
+            Window.blit(Box, (x, y))
 
         ##Drawing the player or help text if crushed
         if self.P is not None :
-            x, y = self.P.getCoords()
-            for i in range(4) :
-                if self.P.getDir() == directions[i] :
-                    Window.blit(plSprites[i], (x*self.delta, y*self.delta))
+            x2, y2 = self.P.getCoords()
+            x2, y2 = x0 + delta*x2, y0 + delta*y2
+            if k!=4 and prev_step[0] is not None :
+                x1 ,y1 = prev_step[0].getCoords()
+                x1, y1 = x0 + delta*x1, y0 + delta*y1
+                dx, dy = (x2-x1)//4, (y2-y1)//4
+                x, y = x1+dx*k, y1+dy*k
+            else :
+                x, y = x2, y2
+            Window.blit(self.P.getSprite(), (x, y))
         else :
-
-            #Render text (to fit the screen)
-            pg.init()
-            size = 24
-            font = pg.font.SysFont("comicsansms", size)
+            font = pg.font.SysFont("comicsansms", 20)
             losetext = font.render("You were crushed, undo (RCtrl) or restart (+)", True, (180, 180, 180))
-            while losetext.get_width() > self.w*self.delta and size > 8 :
-                size -= 2
-                font = pg.font.SysFont("comicsansms", size)
-                losetext = font.render("You were crushed, undo (RCtrl) or restart (+)", True, (180, 180, 180))
-
-            losetext = font.render("You were crushed, undo (RCtrl) or restart (+)", True, (180, 180, 180))
-            x = (self.w*self.delta - losetext.get_width())//2
-            Window.blit(losetext, (x, 0))
+            x = (Ww - losetext.get_width())//2
+            y = y0 - losetext.get_height()
+            Window.blit(losetext, (x, y))
 
         ##Drawing the bullet
         if self.b is not None :
-            x, y = self.b.getCoords()
-            for i in range(4) :
-                if self.b.getDir() == directions[i] :
-                    Window.blit(blSprites[i], (x*self.delta, y*self.delta))
+            x2, y2 = self.b.getCoords()
+            x2, y2 = x0 + delta*x2, y0 + delta*y2
+            if k!=4 and prev_step[1] is not None :
+                x1 ,y1 = prev_step[1].getCoords()
+                x1, y1 = x0 + delta*x1, y0 + delta*y1
+                dx, dy = (x2-x1)//4, (y2-y1)//4
+                x, y = x1+dx*k, y1+dy*k
+            else :
+                x, y = x2, y2
+            Window.blit(self.b.getSprite(), (x, y))
 
         pg.display.flip()
         return None

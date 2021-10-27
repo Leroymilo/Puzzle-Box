@@ -1,3 +1,4 @@
+7 7
 X X X X X X X
 X . . W . . X
 X X X . X X X
@@ -5,3 +6,5 @@ X X . B B . X
 X . . . . . X
 X . . P . . X
 X X X X X X X
+You can push multiple boxes at once.
+Use RETURN or RCTRL to undo.

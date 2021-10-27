@@ -1,4 +1,5 @@
 template :
+the first line is the size of the level (height, then width)
 separate tiles by spaces, but no space at the end of a line.
 . : noting
 X : wall
@@ -11,9 +12,11 @@ I : interruptors
 | : OR gates
 ! : NOT gates
 D : doors (closed by default)
+T : targets
 
 Take care of closing every bound of the level with walls to avoid OOB.
 Or don't, if you want to make some funny things.
+You can add comments lines that will be displayed under the level
 
 The number at the end of the file name needs to be 3 digits long.
 This number also needs to be in the continuity of the already existing levels.

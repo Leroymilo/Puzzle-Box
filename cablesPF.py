@@ -80,9 +80,9 @@ def minF(open) :
 
 
 def add2open(sq:square, grid:np.ndarray, open, closed, B:square) :
-    w, h = grid.shape
+    h, w = grid.shape
     x, y = sq.C
-    nC = [(x, y-1), (x+1, y), (x, y+1), (x-1, y)]
+    nC = [(x, y+1), (x+1, y), (x-1, y), (x, y-1)]
     traversable = True
 
     for i in range(len(nC)) :

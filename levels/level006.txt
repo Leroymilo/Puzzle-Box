@@ -1,3 +1,4 @@
+9 9
 X X X X X X X X X
 X . . . X . . . X
 X . I . D . W . X
@@ -7,3 +8,4 @@ X . . . . B . I X
 X . P . | . . . X
 X . . . . B . I X
 X X X X X X X X X
+An OR gate will turn on if AT LEAST one of its inputs is on.

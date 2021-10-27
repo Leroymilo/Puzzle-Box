@@ -27,18 +27,25 @@ class logic :
             #the first couple is the coordinates of the emitter,
             #the second couple is the coordinates of the receiver
             #and the bool is the state of the link.
+        
+        self.elements = []
 
 
-    def getAll(self) :
+    def getAllCables(self) :
         return self.gps
+
 
     def copyStates(self) :
         return [link[2] for link in self.gps]
 
 
+    def addElement(self, x, y ,type) :
+        self.elements.append([(x, y), type])
+
+
     def setStates(self, newStates) :
         for i in range(len(self.gps)) :
-            self.gps[i][2] = newStates[2]
+            self.gps[i][2] = newStates[i]
         return None
 
 
