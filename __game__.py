@@ -18,7 +18,10 @@ def play(nb, Window) :
         if not lvl.makeLvl :
             print('error, non exising level')
             return False
-        for event in pg.event.get() :
+        
+        events = pg.event.get()
+        if len(events) >= 1 :
+            event = events[0]
             turnUp = False
         
             if event.type == QUIT :
@@ -109,7 +112,7 @@ def play(nb, Window) :
                     for kk in range(4) :
                         lvl.drawBG(Window)
                         lvl.draw(Window, k=kk, prev_step=Steps[-2])
-                        pg.time.wait(25)
+                        pg.time.wait(10)
                 
                 lvl.drawBG(Window)
                 lvl.draw(Window, k=4)
