@@ -17,5 +17,5 @@ as well as pyinstaller installed and in the path.
 
 Credits :
 The cool sprites are made by Phanty (the ugly ones are place holders made by me).
-The title art is made by my brother.
+The title art is made by my brother as well as the new UI palette.
 If someone want to make some music for the game, it would be really cool (it would be paid only if there's enough levels to sell it one day).
