@@ -1,8 +1,0 @@
-7 15
-X X X X X X X X X X X X X X X
-X . . . X . . . . . X . . . X
-X . B . D . . . . . D . . . X
-X . P . X | . & . . X . W . X
-X . I . X . T . I . X . . . X
-X . . . X . . . . . X . . . X
-X X X X X X X X X X X X X X X
