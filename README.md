@@ -1,6 +1,6 @@
 # Swap!
 
-To play the game, download the latest .zip file (with the biggest number), extract it and run Swap!.exe.
+To play the game, download the latest (with the biggest number) .zip file from the "Archives" folder, extract it and run Swap!.exe.
 
 In case it's not obvious, it's advised to delete the files of the previous version if you're downloading a newer version.
 
