@@ -1,8 +1,0 @@
-6 7
-X X X X X X X
-X . I P X W X
-X B X x X D X
-X . . D . . T
-X X . . . . X
-X X X X X X X
-Last trick : you can crush a bullet between boxes and walls.
