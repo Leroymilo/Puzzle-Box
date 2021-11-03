@@ -14,3 +14,9 @@ it should be the latest version of my code.
 
 /!\ The build.bat will only work if you're on windows and you have all of the needed python library
 as well as pyinstaller installed and in the path.
+
+Credits :
+The cool sprites are made by Phanty (the ugly ones are place holders made by me).
+The title art is made by my brother.
+If someone want to make some music for the game, it would be really cool
+(it would be paid only if there's enough levels to sell it one day)
