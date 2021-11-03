@@ -1,0 +1,11 @@
+9 9
+X X X X X X X X X
+X . . . X . . . X
+X . T . X . W . X
+X . . . X . . . X
+X x x x X X D X X
+X . . . x . . . X
+X . P . x . . . X
+X . . . x . . . X
+X X X X X X X X X
+All the targets will turn off if you shoot again.

@@ -1,0 +1,11 @@
+9 9
+X X X X X X X X X
+X . . . X . . . X
+X . T . X . W . X
+X . . . X . . . X
+X x x x X X D X X
+X . . . . . . . X
+X . . . P . . . X
+X . . . . . . . X
+X X X X X X X X X
+The target will turn on if it receives a bullet.

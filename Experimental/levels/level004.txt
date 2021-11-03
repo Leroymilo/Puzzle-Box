@@ -1,0 +1,12 @@
+9 9
+X X X X X X X X X
+X . . . W . . . X
+X . . . . . . . X
+X . . . . . . . X
+X X X X D X X X X
+X . . . . . . . X
+X . B . . . I . X
+X . . . P . . . X
+X X X X X X X X X
+Use the box to weight down the interruptor.
+A blue cable is off and an orange one is on.
