@@ -1,3 +1,4 @@
+Move
 7 7
 X X X X X X X
 X . . W . . X

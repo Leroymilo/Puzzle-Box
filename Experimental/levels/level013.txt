@@ -1,3 +1,4 @@
+Swap, swap and reswap!
 9 21
 X X X X X X X X X X X X X X X X X X X X X
 X . . . D . . . X . . . D . . . X . . . X

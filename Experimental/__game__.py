@@ -22,7 +22,6 @@ def isKeyPressed(pressedKeys) :
             return True
     return False
 
-
 def compareKeys(key1, key2) :
     """
     Returns true if the control keys are at the same state in both inputs
@@ -54,11 +53,12 @@ def play(nb, Window) :
         print('error, non exising level')
         return False
     lvl.mainLogic()
-    Steps = [lvl.copyAllVars()]
+    Steps = [[lvl.copyAllVars(), 0]]
     keyBuffer = []
     keys = None
+    counter = 0
 
-    lvl.drawBG(Window)
+    lvl.drawBG(Window, counter)
     lvl.draw(Window, False)
     pg.time.wait(200)
 
@@ -84,14 +84,15 @@ def play(nb, Window) :
             if keys[K_BACKSPACE] == 1 or keys[K_RCTRL] == 1:
                 if len(Steps) > 1 :
                     prevStep = Steps.pop()
-                    lvl.setAllVars(Steps[-1])
+                    lvl.setAllVars(Steps[-1][0])
+                    counter = Steps[-1][1]
                     lvl.mainLogic()
 
                     for kk in range(4) :
-                        lvl.drawBG(Window)
-                        lvl.draw(Window, k=kk, prev_step=prevStep)
+                        lvl.drawBG(Window, counter)
+                        lvl.draw(Window, k=kk, prev_step=prevStep[0])
                         pg.time.wait(10)  
-                    lvl.drawBG(Window)
+                    lvl.drawBG(Window, counter)
                     lvl.draw(Window, k=4)
 
 
@@ -135,9 +136,10 @@ def play(nb, Window) :
             ##Reset level
 
             elif keys[K_KP_PLUS] == 1 :
-                lvl.setAllVars(Steps[0])
+                lvl.setAllVars(Steps[0][0])
                 lvl.mainLogic()
-                Steps.append(lvl.copyAllVars())
+                Steps.append([lvl.copyAllVars(), 0])
+                counter = 0
             
 
             ##Return to menu
@@ -148,6 +150,7 @@ def play(nb, Window) :
 
             #Check if the action isn't undo or reset
             if turnUp :
+                counter += 1
 
                 #Updating all the logic of the level :
                 lvl.mainLogic()
@@ -163,14 +166,14 @@ def play(nb, Window) :
                 lvl.checkPCrush()
 
                 #Updating the undo storage
-                Steps.append(lvl.copyAllVars())
+                Steps.append([lvl.copyAllVars(), counter])
 
                 for kk in range(4) :
-                    lvl.drawBG(Window)
-                    lvl.draw(Window, k=kk, prev_step=Steps[-2])
+                    lvl.drawBG(Window, counter)
+                    lvl.draw(Window, k=kk, prev_step=Steps[-2][0])
                     pg.time.wait(10)
             
-            lvl.drawBG(Window)
+            lvl.drawBG(Window, counter)
             lvl.draw(Window, k=4)
 
             getKeyPress(keyBuffer, keys)
@@ -185,5 +188,3 @@ def play(nb, Window) :
 
             if lvl.Win() :
                 return True
-            
-            

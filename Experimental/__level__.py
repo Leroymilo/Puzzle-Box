@@ -44,9 +44,10 @@ class Level :
 
         if self.makeLvl :
             lines = Text.split('\n')
-            self.h, self.w = tuple(map(int, lines[0].split()))
-            self.grid = np.array([line.split() for line in lines[1:self.h+1]])
-            self.text = lines[self.h+1:]
+            self.name = lines[0]
+            self.h, self.w = tuple(map(int, lines[1].split()))
+            self.grid = np.array([line.split() for line in lines[2:self.h+2]])
+            self.text = lines[self.h+2:]
 
             self.boxes = []
             self.b = None
@@ -223,20 +224,24 @@ class Level :
 
 
     def PbSwap(self) :
-        if int(self.nb) not in NoSwap and self.P is not None :
-            if self.b is None :
-                turnUp = True
-                self.b = entity(self.P.getCoords(), 'b')
-                self.b.setDir(self.P.getDir())
-                self.resetAllT()
+        if int(self.nb) not in NoSwap :
+            if self.P is None and self.b is not None :
+                self.P = entity(self.b.getCoords(), 'P')
+                self.P.setDir(self.b.getDir())
+                self.b = None
             else :
-                x, y = self.b.getCoords()
-                if  not self.isTile(x, y, 'x') :
-                    self.b.setCoords(self.P.getCoords())
-                    self.P.setCoords((x, y))
-                    PDir = self.P.getDir()
-                    self.P.setDir(self.b.getDir())
-                    self.b.setDir(PDir)
+                if self.b is None :
+                    self.b = entity(self.P.getCoords(), 'b')
+                    self.b.setDir(self.P.getDir())
+                    self.resetAllT()
+                else :
+                    x, y = self.b.getCoords()
+                    if  not self.isTile(x, y, 'x') :
+                        self.b.setCoords(self.P.getCoords())
+                        self.P.setCoords((x, y))
+                        PDir = self.P.getDir()
+                        self.P.setDir(self.b.getDir())
+                        self.b.setDir(PDir)
 
 
     def isBoxBlocked(self, nx, ny) :
@@ -314,7 +319,6 @@ class Level :
                 self.P = None
             elif self.b is not None and self.P.getCoords() == self.b.getCoords() :
                 self.P = None
-                self.b = None
 
 
 
@@ -465,13 +469,13 @@ class Level :
     """
 
 
-    def drawBG(self, Window) :
+    def drawBG(self, Window, count) :
         """
         Draws the background of the level,
         i.e. everything that won't move between steps
         """
         Surface = pg.display.get_surface()
-        Window.fill((0, 0, 100))
+        Window.fill((138, 208, 238))
         Ww, Wh = Window.get_size()
         x0, y0 = (Ww-self.w*delta)//2, (Wh-self.h*delta)//2
 
@@ -493,10 +497,17 @@ class Level :
         font = pg.font.SysFont("comicsansms", 24)
         y = y0+self.h*delta
         for line in self.text :
-            tip = font.render(line, True, (255, 255, 255))
+            tip = font.render(line, True, (0, 0, 0))
             x = (Ww - tip.get_width())//2
             Window.blit(tip, (x, y))
             y += tip.get_height()
+        
+        escape = font.render('press escape to go back to menu', True, (0, 0, 0))
+        Window.blit(escape, (0, 0))
+        name = font.render(str(self.nb)+' : '+self.name, True, (0, 0, 0))
+        Window.blit(name, ((Ww-name.get_width())//2, 0))
+        counter = font.render('Steps : '+str(count), True, (0, 0, 0))
+        Window.blit(counter, ((Ww-counter.get_width())//2, Wh-counter.get_height()))
 
     def draw(self, Window, k=0, prev_step=None) :
         """
@@ -577,12 +588,6 @@ class Level :
             else :
                 x, y = x2, y2
             Window.blit(self.P.getSprite(), (x, y))
-        else :
-            font = pg.font.SysFont("comicsansms", 20)
-            losetext = font.render("You were crushed, undo (RCtrl) or restart (+)", True, (180, 180, 180))
-            x = (Ww - losetext.get_width())//2
-            y = y0 - losetext.get_height()
-            Window.blit(losetext, (x, y))
 
         ##Drawing the bullet
         if self.b is not None :
@@ -596,6 +601,14 @@ class Level :
             else :
                 x, y = x2, y2
             Window.blit(self.b.getSprite(), (x, y))
+        
+        ##Drawing death tip
+        if self.b is None and self.P is None :
+            font = pg.font.SysFont("comicsansms", 20)
+            losetext = font.render("You were crushed, undo (RCtrl) or restart (+)", True, (180, 180, 180))
+            x = (Ww - losetext.get_width())//2
+            y = y0 - losetext.get_height()
+            Window.blit(losetext, (x, y))
 
         pg.display.flip()
         return None

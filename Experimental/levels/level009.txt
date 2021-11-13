@@ -1,3 +1,4 @@
+Swap again!
 7 7
 X X X X X X X
 X . . . . . X
@@ -7,3 +8,4 @@ X . . X . . X
 X P . X . W X
 X X X X X X X
 Use ENTER to wait for the bullet to move.
+Don't get shot!

@@ -19,9 +19,9 @@ Or don't, if you want to make some funny things.
 You can add comments lines that will be displayed under the level
 
 The number at the end of the file name needs to be 3 digits long.
-This number also needs to be in the continuity of the already existing levels.
-Exemple : don't make level549.txt if level001.txt to level548.txt are not in the file.
-If you don't respect these rules, the game will just crash.
+You need to add the number of your level to the config file :
+each line represents a page in the menu, you can't put more than 20 levels on a page.
+If you don't respect these rules, the game will just crash or your level won't show up.
 
 You can now make your own levels!
 Make sure to check logic\README.txt to learn how to connect your level's gates.

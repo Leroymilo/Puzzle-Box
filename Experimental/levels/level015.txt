@@ -1,3 +1,4 @@
+Aim the swap!
 9 9
 X X X X X X X X X
 X . . . X . . . X

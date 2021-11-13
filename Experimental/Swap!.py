@@ -13,70 +13,79 @@ pg.init()
 pg.key.set_repeat(200, 200)
 
 
-#Important variables
+#reading the config files
+File = open("config")
+config = [data.split(' ') for data in File.read().split('\n')]
+File.close()
+File = open("levels\config")
+lvlConfig = [[int(nb) for nb in page.split(' ')] for page in File.read().split('\n')]
+File.close()
+
+#Initialising variables and constants
 Window = pg.display.set_mode((0, 0))
 AddButtons(Window)
 w, h = Window.get_size()
 Continue = True
-saveId = 1
+saveId = int(config[0][1])
 curScene = Title
-page = 1
-levels = [int(name[5:8]) for name in os.listdir('levels') if name != 'README.txt']
-#Count the number of levels
-pages = [np.zeros((4, 5), dtype=int) for _ in range(max(levels)//20+1)]
-#keep count on the completed levels of this save
-Clvl = []
-#Importing images
-prev_page = pg.image.load(os.path.join("sprites\\prev_page.png"))
-next_page = pg.image.load(os.path.join("sprites\\next_page.png"))
+pageId = 0
+pages = []
+
 #Scaling the title to the screen :
-title = pg.image.load(os.path.join("sprites\\Title.png"))
+title = pg.image.load(os.path.join("menu sprites\\Title.png"))
 th = h//2
 tw = th*title.get_width()//title.get_height()
 title = pg.transform.scale(title, (tw, th))
 
-
+def createPages(lvl_config, comp_levels) :
+    #Creates the pages of levels in the menu
+    #based on the config file and the save file.
+    #0 : level does not exist
+    #1 : level is locked
+    #2 : level is playable but not completed
+    #3 : level is completed
+    nbPages = len(lvl_config)
+    M = max(comp_levels) + 2
+    pages = []
+    for i in range(nbPages) :
+        page = np.zeros((4, 5), dtype=int)
+        for j in range(len(lvl_config[i])) :
+            if lvl_config[i][j] in comp_levels :
+                page[j//5, j%5] = 3
+            elif lvl_config[i][j] <= M :
+                page[j//5, j%5] = 2
+            else :
+                page[j//5, j%5] = 1
+        pages.append(page.copy())
+    return pages
 
 def loadSave(svId) :
     #Load a save from its Id (or number)
     global pages
-    global Clvl
-    global nlvl
+    global lvlConfig
     File = open("saves\\Save"+str(svId)+".txt")
-    Text = File.read()
+    Clvl = [int(lvl) for lvl in File.read().split("\n")]  #list of already completed levels
     File.close()
-    Clvl = [int(lvl) for lvl in Text.split("\n")]   #list of already completed levels
-    M = max(Clvl) + 2
-    while (not M in levels) and (M <= max(levels)) :
-        M += 1
-    for Id in range(1, max(levels)+1) :
-        if Id in levels :
-            pageId = Id//20
-            line = ((Id%20)-1)//5
-            col = ((Id%20-1)%5)
-            if Id <= M :
-                if Id in Clvl :
-                    pages[pageId][line, col] = 3
-                else :
-                    pages[pageId][line, col] = 2
-            else :
-                pages[pageId][line, col] = 1
+    pages = createPages(lvlConfig, Clvl)
     
     #Updating the Levels scene :
-    global page
+    global pageId
     global Scenes
-    Scenes[1] = mkLvlScene(Window, pages, page-1)
+    Scenes[1] = mkLvlScene(Window, pages, lvlConfig, pageId)
 
-def writeSave(svId, clvl) :
+def writeSave(svId, nb) :
     #Add the newly completed levels to the save file
-    text = ''
-    for lvl in clvl :
-        text += str(lvl)
-        text += '\n'
-    text = text[:-1]
-    File = open("saves\\Save"+str(svId)+".txt", 'r+')
-    File.write(text)
+    File = open("saves\\Save"+str(svId)+".txt")
+    Clvl = [int(lvl) for lvl in File.read().split("\n")]  #list of already completed levels
     File.close()
+    if nb not in Clvl :
+        text = ''
+        for lvl in Clvl :
+            text += str(lvl)+'\n'
+        text += str(nb)
+        File = open("saves\\Save"+str(svId)+".txt", 'r+')
+        File.write(text)
+        File.close()
     return None
 
 def clearSave(svId) :
@@ -85,6 +94,15 @@ def clearSave(svId) :
     File.write('0')
     File.close()
     return None
+
+def saveConfig() :
+    global config
+    text = '\n'.join([' '.join(line) for line in config])
+    File = open("config", 'r+')
+    File.write(text)
+    File.close()
+
+
 
 #Search for which levels are already completed
 loadSave(saveId)
@@ -119,15 +137,10 @@ def draw(scene:Scene, Window) :
     scene.draw(Window)
     
     if scene.getName() == 'Levels' :
-        global page
+        global pageId
         global pages
-        x0 = (Ww-(80+40)*5+40)//2
-        x1, x2 = x0-20-45, Ww-x0+20
-        y = (Wh-90)//2
-        Window.blit(prev_page, (x1, y))
-        Window.blit(next_page, (x2, y))
         font = pg.font.SysFont("comicsansms", 20)
-        text = font.render('Page '+str(page)+'/'+str(len(pages)), True, (255, 255, 255))
+        text = font.render('Page '+str(pageId+1)+'/'+str(len(pages)), True, (255, 255, 255))
         Window.blit(text, ((Ww-text.get_width())//2, Wh-text.get_height()))
 
 
@@ -150,34 +163,34 @@ while Continue :
                     for scene in Scenes :
                         if scene.getName() == nS :
                             curScene = scene
-                
+
                 elif action[0] == "load level" :
                     nb = action[1]
                     finished = True
-                    while finished and nb in levels :
+                    while finished :
                         finished = play(nb, Window)
-                        if finished and not nb in Clvl :
-                            Clvl.append(nb)
-                            writeSave(saveId, Clvl)
+                        if finished :
+                            writeSave(saveId, nb)
                         nb += 1
                     loadSave(saveId)
                     curScene = Scenes[1]
                     Window = pg.display.set_mode((w, h))
                 
                 elif action[0] == "next page" :
-                    page = (page)%len(pages) + 1
-                    Scenes[1] = mkLvlScene(Window, pages, page-1)
+                    pageId = (pageId+1)%len(pages)
+                    Scenes[1] = mkLvlScene(Window, pages, lvlConfig, pageId)
                     curScene = Scenes[1]
                 
                 elif action[0] == "prev page" :
-                    page = (page-2)%len(pages) + 1
-                    Scenes[1] = mkLvlScene(Window, pages, page-1)
+                    pageId = (pageId-1)%len(pages)
+                    Scenes[1] = mkLvlScene(Window, pages, lvlConfig, pageId)
                     curScene = Scenes[1]
 
                 elif action[0] == "load save" :
                     saveId = action[1]
                     loadSave(saveId)
                     curScene = Scenes[2]
+                    config[0][1] = str(saveId)
                 
                 elif action[0] == "clear" :
                     clearSave(saveId)
@@ -196,3 +209,4 @@ while Continue :
         
         draw(curScene, Window)
 pg.quit
+saveConfig()
