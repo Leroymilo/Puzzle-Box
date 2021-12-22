@@ -27,6 +27,7 @@ def updateDisplay() :
 def changeSize() :
     nh = int(textInput('New height :'))
     nw = int(textInput('New width :'))
+    updateDisplay()
     global grid
     h, w = grid.shape
     ngrid = np.array([['.']*nw for _ in range(nh)])
@@ -46,7 +47,7 @@ def loadLevel() :
 
     dir_ = "levels\\level" + strn + ".txt"
     try :
-        File = open(dir_)
+        File = open(dir_, 'r')
     except :
         return False
     Lines = File.readlines()
@@ -59,7 +60,7 @@ def loadLevel() :
 
     dir_ = "logic\\links" + strn + ".txt"
     try :
-        File = open(dir_)
+        File = open(dir_, 'r')
     except :
         return False
     Lines = File.readlines()
@@ -103,6 +104,7 @@ def saveLevel() :
 
 def saveLevelAs() :
     lvlnb = textInput('Level Id (0 for first disponible Id)')
+    updateDisplay()
     if lvlnb is None or lvlnb == '' :
         return
     global levelnb
@@ -164,6 +166,26 @@ def PF(link) :
             truePath[-1] = addOffset(truePath[-1], offset, direction)
     
     return truePath
+
+def updateCables() :
+    global links
+    global nodePaths
+    global paths
+    nodePaths = []
+    paths = []
+
+    #Cleaning links with no start or no end :
+    newlinks = []
+    for link in links :
+        ((sx ,sy), (ex, ey)) = link
+        if grid[sy, sx] in 'IT&|!' and grid[ey, ex] in '&|!D' :
+            newlinks.append(link)
+    links = newlinks
+
+    #Redoing all the pathfinding :
+    #Could check if logic changed to avoid useless redoing
+    for link in links :
+        paths.append(PF(link))
 
 def displayTopHUD() :
     global Window
@@ -300,10 +322,11 @@ while Continue :
                 except :
                     x, y = -1, -1
                 
-                if y > Window.get_height() - bottomHUDh and not Connect :
-                    w = len(Elements)
-                    sqx = (x-(Window.get_width()-w*delta)//2)//delta
-                    tile = sqx
+                if y > Window.get_height() - bottomHUDh :
+                    if not Connect :
+                        w = len(Elements)
+                        sqx = (x-(Window.get_width()-w*delta)//2)//delta
+                        tile = sqx
                 
                 elif y > topHUDh :
                     h, w = grid.shape
@@ -311,13 +334,17 @@ while Continue :
                     if 0 <= sqx < grid.shape[1] :
                         if Connect :
                             if startLink is None :
-                                startLink = (sqx, sqy)
+                                if grid[sqy, sqx] in 'IT&|!' :
+                                    startLink = (sqx, sqy)
                             else :
-                                newlink = (startLink, (sqx, sqy))
-                                if newlink not in links :
-                                    links.append(newlink)
-                                    paths.append(PF(newlink))
-                                startLink = None
+                                if grid[sqy, sqx] in '&|!D' :
+                                    newlink = (startLink, (sqx, sqy))
+                                    if newlink not in links :
+                                        links.append(newlink)
+                                    else :
+                                        links.remove(newlink)
+                                    startLink = None
+                                    updateCables()
                         
                         else :
                             el = Elements[tile]
@@ -325,6 +352,7 @@ while Continue :
                                 [[py, px]] = np.argwhere(grid==el)
                                 grid[py, px] = '.'
                             grid[sqy, sqx] = el
+                            updateCables()
                 
                 elif 0 <= y < topHUDh :
                     #First line of buttons :
@@ -334,7 +362,6 @@ while Continue :
                         
                         elif 71 <= x <= 178 :
                             saveLevelAs()
-                            updateDisplay()
                         
                         elif 182 <= x <= 247 :
                             loaded = loadLevel()
@@ -354,6 +381,8 @@ while Continue :
                     else :
                         if 0 <= x <= 139 :
                             Connect = not Connect
+                            if not Connect :
+                                startLink = None
 
             prevMouse = mouse
 
